@@ -1,0 +1,75 @@
+spring:
+  main:
+     # 设置数据源定义可以被覆盖
+    allow-bean-definition-overriding: true
+   # 分库分表设置
+  shardingsphere:
+     # 数据源设置
+    datasource:
+      names: ds0,ds1,ds0slave0,ds1slave0
+      ds0:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://svc.redblue-ai.com:31306/test0?useUnicode=true&characterEncoding=utf8&tinyInt1isBit=false&useSSL=false&serverTimezone=GMT
+        username: root
+        password: test.123
+      ds1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://svc.redblue-ai.com:31306/test1?useUnicode=true&characterEncoding=utf8&tinyInt1isBit=false&useSSL=false&serverTimezone=GMT
+        username: root
+        password: test.123
+      ds0slave0:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://svc.redblue-ai.com:31306/test0?useUnicode=true&characterEncoding=utf8&tinyInt1isBit=false&useSSL=false&serverTimezone=GMT
+        username: root
+        password: test.123
+      ds1slave0:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.jdbc.Driver
+        url: jdbc:mysql://svc.redblue-ai.com:31306/test1?useUnicode=true&characterEncoding=utf8&tinyInt1isBit=false&useSSL=false&serverTimezone=GMT
+        username: root
+        password: test.123
+    sharding:
+      tables:
+        t_order:
+           actual-data-nodes: ds$->{0..1}.t_order_$->{0..2}
+           # actual-data-nodes: ds$->{0..1}.t_order_0,ds$->{0..1}.t_order_1,ds$->{0..1}.t_order_2
+               # 指定分库规则
+           database-strategy:
+            inline:
+              sharding-column: id
+              algorithm-expression: ds$->{id % 2}
+           table-strategy:
+              inline:
+                sharding-column: type
+                algorithm-expression: t_order_$->{type}
+        user:
+           actual-data-nodes: ds0.t_user
+      master-slave-rules:
+        ds0:
+          master-data-source-name: ds0
+          slave-data-source-names: ds0slave0
+          load-balance-algorithm-type: RANDOM
+        ds1:
+          master-data-source-name: ds1
+          slave-data-source-names: ds1slave0
+          load-balance-algorithm-type: ROUND_ROBIN
+
+     # 打印sql
+    props:
+      sql:
+        show: true
+
+# mybatis-plus设置
+mybatis-plus:
+  mapper-locations: classpath*:mappers/*.xml
+  map-underscore-to-camel-case: true
+  
+# 分页配置
+pagehelper:
+  helper-dialect: mysql
+  reasonable: fasle  #分页合理化参数默认 false
+  support-methods-arguments: true
+  params: count=countSql
